@@ -37,11 +37,12 @@ my $ftp_password;
 my $ftp_port;
 my $output;
 my $dbh;
+my $outputbatch = 5000;
 
 my $ret = GetOptions(
     'run_date:s'          => \$run_date,
-    'db_host:s'  	      => \$db_host,
-    'db_user:s'    	      => \$db_user,
+    'db_host:s'  	  => \$db_host,
+    'db_user:s'    	  => \$db_user,
     'db_database:s'       => \$db_database,
     'db_password:s'  	  => \$db_password,
     'db_port:s'	          => \$db_port,
@@ -429,49 +430,27 @@ sub generate_items_file {
     FROM edelweiss_items;';
     my $sth = $dbh->prepare($sql);
     $sth->execute();
-    my @results;
-
-    while (my @row = $sth->fetchrow_array) {
-        push @results, {
-            copy_id         => $row[0],
-            barcode         => csv_protect_string($row[1]),
-            biblio_id       => $row[2],
-            eans            => csv_protect_string($row[3]),
-            itype           => csv_protect_string($row[4]),
-            call_number     => csv_protect_string($row[5]),
-            copy_location   => csv_protect_string($row[6]),
-            library         => csv_protect_string($row[7]),
-            create_date     => $row[8],
-            status          => csv_protect_string($row[9]),
-            last_circ       => $row[10],
-            last_checkin    => $row[11],
-            last_due        => $row[12],
-            monthly_circs   => $row[13],
-            annual_circs    => $row[14],
-            all_circs       => $row[15],
-            fund            => csv_protect_string($row[16])
-        };
-    }
 
     print $fh "copy_id,barcode,biblio_id,eans,itype,call_number,copy_location,library,create_date,status,last_circ,last_checkin,last_due,monthly_circs,annual_circs,all_circs,fund\n";
-    foreach my $built_hash( @results ) {
-        print $fh "$built_hash->{copy_id},";
-        print $fh "$built_hash->{barcode},";
-        print $fh "$built_hash->{biblio_id},";
-        print $fh "$built_hash->{eans},";
-        print $fh "$built_hash->{itype},";
-        print $fh "$built_hash->{call_number},";
-        print $fh "$built_hash->{copy_location},";
-        print $fh "$built_hash->{library},";
-        print $fh "$built_hash->{create_date},";
-        print $fh "$built_hash->{status},";
-	    print $fh "$built_hash->{last_circ},";
-        print $fh "$built_hash->{last_checkin},";
-        print $fh "$built_hash->{last_due},";
-        print $fh "$built_hash->{monthly_circs},";
-        print $fh "$built_hash->{annual_circs},";
-        print $fh "$built_hash->{all_circs},";
-        print $fh "$built_hash->{fund}\n";
+    while (my @row = $sth->fetchrow_array) {
+        print $fh "$row[0],";
+        print $fh csv_protect_string($row[1]) . ",";
+        print $fh "$row[2],";
+        print $fh csv_protect_string($row[3]) . ",";
+        print $fh csv_protect_string($row[4]) . ",";
+        print $fh csv_protect_string($row[5]) . ",";
+        print $fh csv_protect_string($row[6]) . ",";
+        print $fh csv_protect_string($row[7]) . ",";
+        print $fh "$row[8],";
+        print $fh csv_protect_string($row[9]) . ",";
+        print $fh "$row[10],";
+        print $fh "$row[11],";
+        print $fh "$row[12],";
+        print $fh "$row[13],";
+        print $fh "$row[14],";
+        print $fh "$row[15],";
+        print $fh csv_protect_string($row[16]) ;
+	print $fh "\n";
     }
     return;
 }
@@ -483,20 +462,12 @@ sub generate_orders_file {
     my $sth = $dbh->prepare($sql);
     $sth->execute();
 
-    my @results;
+    print $fh "biblio_id,hold_count,holds_branch\n";    
     while (my @row = $sth->fetchrow_array) {
-        push @results, {
-            biblio_id       => $row[0],
-            order_count     => $row[1],
-            branch          => csv_protect_string($row[2])
-        };
-    }
-
-    print $fh "biblio_id,hold_count,holds_branch\n";
-    foreach my $built_hash( @results ) {
-        print $fh "$built_hash->{biblio_id},";
-        print $fh "$built_hash->{order_count},";
-        print $fh "$built_hash->{branch}\n";
+        print $fh "$row[0],";
+        print $fh "$row[1],";
+        print $fh csv_protect_string($row[2]);
+	print $fh "\n";
     }
     return;
 }
@@ -509,20 +480,12 @@ sub generate_holds_file {
     my $sth = $dbh->prepare($sql);
     $sth->execute();
     
-    my @results;
-    while (my @row = $sth->fetchrow_array) {
-        push @results, {
-            biblio_id       => $row[0],
-            hold_count      => $row[1],
-            holds_branch    => csv_protect_string($row[2])
-        };
-    }
-
     print $fh "biblio_id,hold_count,holds_branch\n";
-    foreach my $built_hash( @results ) {
-        print $fh "$built_hash->{biblio_id},";
-        print $fh "$built_hash->{hold_count},";
-        print $fh "$built_hash->{holds_branch}\n";
+    while (my @row = $sth->fetchrow_array) {
+        print $fh "$row[0],";
+        print $fh "$row[1],";
+        print $fh csv_protect_string($row[2]);
+	print $fh "\n";
     }
     return;
 }
@@ -541,28 +504,15 @@ sub generate_circs_file {
     FROM edelweiss_transactions t;';
     my $sth = $dbh->prepare($sql);
     $sth->execute();
-    my @results;
-    while (my @row = $sth->fetchrow_array) {
-        push @results, {       
-            copy_id         => $row[0],
-            barcode         => csv_protect_string($row[1]),
-            biblio_id       => $row[2],
-            trans_type      => csv_protect_string($row[3]),
-            trans_date      => $row[4],
-            trans_branch    => csv_protect_string($row[5]),
-            due_date        => $row[6]
-        };
-    }
-
     print $fh "copy_id,barcode,biblio_id,transaction_type,transaction_date,transaction_branch,due_date\n";
-    foreach my $built_hash( @results ) {
-        print $fh "$built_hash->{copy_id},";
-        print $fh "$built_hash->{barcode},";
-        print $fh "$built_hash->{biblio_id},";
-        print $fh "$built_hash->{trans_type},";
-        print $fh "$built_hash->{trans_date},";
-        print $fh "$built_hash->{trans_branch},";
-        print $fh "$built_hash->{due_date}\n"; 
+    while (my @row = $sth->fetchrow_array) {
+        print $fh "$row[0],";
+        print $fh csv_protect_string($row[1]) . ",";
+        print $fh "$row[2],";
+        print $fh csv_protect_string($row[3]) . ",";
+        print $fh "$row[4],";
+        print $fh csv_protect_string($row[5]) . ",";
+        print $fh "$row[6]\n";
     }
     return;
 }
@@ -583,33 +533,19 @@ sub generate_bibs_file {
     my $sth = $dbh->prepare($sql);
     $sth->execute();
 
-    my @results;
-    while (my @row = $sth->fetchrow_array) {
-        push @results, {
-            biblio_id            => $row[0],
-            eans                 => csv_protect_string($row[1]),
-            material_type        => csv_protect_string($row[2]),
-            title                => csv_protect_string($row[3]),
-            author               => csv_protect_string($row[4]),
-            series               => csv_protect_string($row[5]),
-            pub_date             => csv_protect_string($row[6]),
-            publisher_supplier   => csv_protect_string($row[7]),
-            price                => csv_protect_string($row[8])
-        };
-    }
-
     print $fh "biblio_id,eans,material_type,title,author,series,pub_date,publisher_supplier,price\n";
-    foreach my $built_hash( @results ) {
-        print $fh "$built_hash->{biblio_id},";
-        print $fh "$built_hash->{eans},";
-        print $fh "$built_hash->{material_type},";
-        print $fh "$built_hash->{title},";
-        print $fh "$built_hash->{author},";
-        print $fh "$built_hash->{series},";
-        print $fh "$built_hash->{pub_date},";
-        print $fh "$built_hash->{publisher_supplier},";
-        print $fh "$built_hash->{price}\n";
-    }
+    while (my @row = $sth->fetchrow_array) {
+        print $fh "$row[0],";
+        print $fh csv_protect_string($row[1]) . ",";
+        print $fh csv_protect_string($row[2]) . ",";
+        print $fh csv_protect_string($row[3]) . ",";
+        print $fh csv_protect_string($row[4]) . ",";
+        print $fh csv_protect_string($row[5]) . ",";
+        print $fh csv_protect_string($row[6]) . ",";
+        print $fh csv_protect_string($row[7]) . ",";
+        print $fh csv_protect_string($row[8]);
+ 	print $fh "\n";
+   }
     return;
 }
 
@@ -698,12 +634,6 @@ sub print_usage {
     print <<_USAGE_;
 
 Switches:
-
-  --run_date    optional, used for generating files as if the script was 
-                being run on a previous date, if not supplied it defaults to
-                today, note that transactions run for the previous day 
-                so if you want transactions for 2018-02-19 supply the date
-                it would run as as the 20th, e.g. --run_date 20180220 
 
   --db_host      - required with failover 
   --db_user      - required with failover
