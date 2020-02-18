@@ -220,7 +220,7 @@ sub aggregate_items {
 
     $sql = 'CREATE TABLE edelweiss_items AS 
                 SELECT itemnumber AS ac_id, barcode, dateaccessioned AS create_date, permanent_location AS copy_location, 
-                    holdingbranch AS library, itemcallnumber as call_number, itype, biblionumber AS biblio_id,
+                    holdingbranch AS library, itemcallnumber as call_number, itype, biblionumber AS biblio_id, ccode AS collection_code
                     CASE 
                         WHEN itemlost = 0 THEN "Not Lost"
                         WHEN itemlost = 1 THEN "Lost"
@@ -229,6 +229,7 @@ sub aggregate_items {
                         WHEN itemlost = 4 THEN "Missing"
                         ELSE "Not Lost"
                         END AS status 
+                    ,ccode AS collection_code
                 FROM items
                 WHERE withdrawn = 0 AND (notforloan = 0 OR notforloan = -1);';
     $sth = $dbh->prepare($sql);
@@ -427,11 +428,12 @@ sub generate_items_file {
         ,annual_circs
         ,all_circs
         ,fund
+        ,collection_code
     FROM edelweiss_items;';
     my $sth = $dbh->prepare($sql);
     $sth->execute();
 
-    print $fh "copy_id,barcode,biblio_id,eans,itype,call_number,copy_location,library,create_date,status,last_circ,last_checkin,last_due,monthly_circs,annual_circs,all_circs,fund\n";
+    print $fh "copy_id,barcode,biblio_id,eans,itype,call_number,copy_location,library,create_date,status,last_circ,last_checkin,last_due,monthly_circs,annual_circs,all_circs,fund,collection_code\n";
     while (my @row = $sth->fetchrow_array) {
         print $fh "$row[0],";
         print $fh csv_protect_string($row[1]) . ",";
@@ -449,7 +451,8 @@ sub generate_items_file {
         print $fh "$row[13],";
         print $fh "$row[14],";
         print $fh "$row[15],";
-        print $fh csv_protect_string($row[16]) ;
+        print $fh csv_protect_string($row[16]);
+        print $fh csv_protect_string($row[17]);
 	print $fh "\n";
     }
     return;

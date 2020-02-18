@@ -236,6 +236,7 @@ sub aggregate_items {
                         WHEN itemlost = 4 THEN "Missing"
                         ELSE "Not Lost"
                         END AS status 
+                    ,ccode AS collection_code 
                 FROM items
                 WHERE withdrawn = 0 AND (notforloan = 0 OR notforloan = -1) 
                 AND dateaccessioned < CAST(\'' . $sql_date .  '\' AS DATE);';
@@ -437,6 +438,7 @@ sub generate_items_file {
         ,annual_circs
         ,all_circs
         ,fund
+        ,collection_code
     FROM edelweiss_items;';
     my $sth = $dbh->prepare($sql);
     $sth->execute();
@@ -460,11 +462,12 @@ sub generate_items_file {
             monthly_circs   => $row[13],
             annual_circs    => $row[14],
             all_circs       => $row[15],
-            fund            => csv_protect_string($row[16])
+            fund            => csv_protect_string($row[16]),
+            collection_code => csv_protect_string($row[17])
         };
     }
 
-    print $fh "copy_id,barcode,biblio_id,eans,itype,call_number,copy_location,library,create_date,status,last_circ,last_checkin,last_due,monthly_circs,annual_circs,all_circs,fund\n";
+    print $fh "copy_id,barcode,biblio_id,eans,itype,call_number,copy_location,library,create_date,status,last_circ,last_checkin,last_due,monthly_circs,annual_circs,all_circs,fund,collection_code\n";
     foreach my $built_hash( @results ) {
         print $fh "$built_hash->{copy_id},";
         print $fh "$built_hash->{barcode},";
@@ -482,7 +485,8 @@ sub generate_items_file {
         print $fh "$built_hash->{monthly_circs},";
         print $fh "$built_hash->{annual_circs},";
         print $fh "$built_hash->{all_circs},";
-        print $fh "$built_hash->{fund}\n";
+        print $fh "$built_hash->{fund},";
+        print $fh "$built_hash->{collection_code}\n";
     }
     return;
 }
