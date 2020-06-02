@@ -40,11 +40,11 @@ my $dbh;
 
 my $ret = GetOptions(
     'run_date:s'          => \$run_date,
-    'db_host:s'  	      => \$db_host,
-    'db_user:s'    	      => \$db_user,
+    'db_host:s'           => \$db_host,
+    'db_user:s'           => \$db_user,
     'db_database:s'       => \$db_database,
-    'db_password:s'  	  => \$db_password,
-    'db_port:s'	          => \$db_port,
+    'db_password:s'       => \$db_password,
+    'db_port:s'           => \$db_port,
     'ftp_folder:s'        => \$ftp_folder,
     'ftp_host:s'          => \$ftp_host,
     'ftp_user:s'          => \$ftp_user,
@@ -442,52 +442,30 @@ sub generate_items_file {
     FROM edelweiss_items;';
     my $sth = $dbh->prepare($sql);
     $sth->execute();
-    my @results;
+    print $fh "copy_id,barcode,biblio_id,eans,itype,call_number,copy_location,library,create_date,status,last_circ,last_checkin,last_due,monthly_circs,annual_circs,all_circs,fund,collection_code\n";
 
     while (my @row = $sth->fetchrow_array) {
-        push @results, {
-            copy_id         => $row[0],
-            barcode         => csv_protect_string($row[1]),
-            biblio_id       => $row[2],
-            eans            => csv_protect_string($row[3]),
-            itype           => csv_protect_string($row[4]),
-            call_number     => csv_protect_string($row[5]),
-            copy_location   => csv_protect_string($row[6]),
-            library         => csv_protect_string($row[7]),
-            create_date     => $row[8],
-            status          => csv_protect_string($row[9]),
-            last_circ       => $row[10],
-            last_checkin    => $row[11],
-            last_due        => $row[12],
-            monthly_circs   => $row[13],
-            annual_circs    => $row[14],
-            all_circs       => $row[15],
-            fund            => csv_protect_string($row[16]),
-            collection_code => csv_protect_string($row[17])
-        };
+        my $copy_id         = $row[0];
+        my $barcode         = csv_protect_string($row[1]);
+        my $biblio_id       = $row[2];
+        my $eans            = csv_protect_string($row[3]);
+        my $itype           = csv_protect_string($row[4]);
+        my $call_number     = csv_protect_string($row[5]);
+        my $copy_location   = csv_protect_string($row[6]);
+        my $library         = csv_protect_string($row[7]);
+        my $create_date     = $row[8];
+        my $status          = csv_protect_string($row[9]);
+        my $last_circ       = $row[10];
+        my $last_checkin    = $row[11];
+        my $last_due        = $row[12];
+        my $monthly_circs   = $row[13];
+        my $annual_circs    = $row[14];
+        my $all_circs       = $row[15];
+        my $fund            = csv_protect_string($row[16]);
+        my $collection_code = csv_protect_string($row[17]);
+        print $fh "$copy_id,$barcode,$biblio_id,$eans,$itype,$call_number,$copy_location,$library,$create_date,$status,$last_circ,$last_checkin,$last_due,$monthly_circs,$annual_circs,$all_circs,$fund,$collection_code\n";
     }
 
-    print $fh "copy_id,barcode,biblio_id,eans,itype,call_number,copy_location,library,create_date,status,last_circ,last_checkin,last_due,monthly_circs,annual_circs,all_circs,fund,collection_code\n";
-    foreach my $built_hash( @results ) {
-        print $fh "$built_hash->{copy_id},";
-        print $fh "$built_hash->{barcode},";
-        print $fh "$built_hash->{biblio_id},";
-        print $fh "$built_hash->{eans},";
-        print $fh "$built_hash->{itype},";
-        print $fh "$built_hash->{call_number},";
-        print $fh "$built_hash->{copy_location},";
-        print $fh "$built_hash->{library},";
-        print $fh "$built_hash->{create_date},";
-        print $fh "$built_hash->{status},";
-	    print $fh "$built_hash->{last_circ},";
-        print $fh "$built_hash->{last_checkin},";
-        print $fh "$built_hash->{last_due},";
-        print $fh "$built_hash->{monthly_circs},";
-        print $fh "$built_hash->{annual_circs},";
-        print $fh "$built_hash->{all_circs},";
-        print $fh "$built_hash->{fund},";
-        print $fh "$built_hash->{collection_code}\n";
-    }
     return;
 }
 
